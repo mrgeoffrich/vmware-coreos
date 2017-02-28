@@ -1,0 +1,28 @@
+#cloud-config
+---
+ssh-authorized-keys:
+  - ssh-rsa PUT YOUR KEY HERE
+users:
+  - name: testuser
+    groups: 
+      - sudo
+      - docker
+    passwd: $1$bBcQ2nv5$6HAiGk7aF5lgM7pyVzuPa
+coreos:
+  etcd2:
+    proxy: on
+    listen-client-urls: http://localhost:2379
+    initial-cluster: etcdserver=http://##etcd-server-address##:2380
+  fleet:
+    etcd_servers: "http://localhost:2379"
+  units:
+    - name: etcd2.service
+      command: start
+    - name: fleet.service
+      command: start
+    - name: flanneld.service
+      command: start
+    - name: docker.service
+      command: start
+  update:
+    group: stable

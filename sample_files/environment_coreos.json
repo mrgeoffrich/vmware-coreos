@@ -1,0 +1,18 @@
+{
+        "Description": "Core OS Cluster with single etcd",
+        "Name": "coreos-cluster",
+        "Machines": [
+             {
+                "Name": "etcd",
+                "CloudInitSource": "./deploy_files/user-data-etcd-static.yaml",
+                "Count": 1,
+                "StaticIP": "192.168.0.6"
+            },
+            {
+                "Name": "worker",
+                "CloudInitSource": "./deploy_files/user-data-worker.yaml",
+                "Count": 3,
+                "CloudInitReplace": [{ "Name": "etcd-server-address", "ReplaceValue": "192.168.0.6" }]
+            }
+        ]
+    }

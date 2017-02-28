@@ -1,0 +1,126 @@
+swagger: '2.0'
+
+info:
+  description: |
+    This API will provision environments of virtual machines on vmware, using coreos as the base
+    operating system.
+  version: "0.0.1"
+  title: CoreOS Environment Automation
+  license:
+    name: MIT
+    url: https://mit-license.org/
+
+paths:
+  /environments:
+    post:
+      description: |
+        Creates a new environment from a provided set of specifications.
+      parameters:
+        - in: body
+          name: body
+          description: The definition of the environment and it's machines configuration.
+          required: true
+          schema:
+            $ref: '#/definitions/NewEnvironmentRequest'
+      responses:
+        200:
+          description: Successful response
+    get:
+      description: |
+        Gets all the running environments.
+      responses:
+        200:
+          description: Successful response
+          schema:
+            title: ArrayOfVMs
+            type: array
+            items:
+              title: VM
+              type: object
+              properties:
+                name:
+                  type: string
+                environment:
+                  type: string
+    delete:
+      description: |
+        Destroy an environment.
+      parameters:
+        # An example parameter that is in query and is required
+        -
+          name: name
+          in: query
+          description: Environment to delete
+          required: true
+          type: string
+      responses:
+        # Response code
+        200:
+          description: Successful response
+        404:
+          description: Environment not found
+definitions:
+  NewEnvironmentRequest:
+    type: object
+    properties:
+      Subnet:
+        $ref: '#/definitions/SubnetDefinition'
+      VMWareHost:
+        $ref: '#/definitions/VMWareHostDefinition'
+      Environment:
+        $ref: '#/definitions/EnvironmentDefinition'
+  SubnetDefinition:
+    type: object
+    properties:
+      GatewayIP:
+        type: string
+      DNSServers:
+        type: array
+        items:
+          type: string
+      SubnetIP:
+        type: string
+      SubnetMask:
+        type: string
+  VMWareHostDefinition:
+    type: object
+    properties:
+      host:
+        type: string
+      datastore:
+        type: string
+      resourcePool:
+        type: string
+  EnvironmentDefinition:
+    type: object
+    properties:
+      Description:
+        type: string
+      Name:
+        type: string
+      Machines:
+        type: array
+        items:
+          $ref: "#/definitions/EnvironmentRole"
+  EnvironmentRole:
+    type: object
+    properties:
+      Name:
+        type: string
+      CloudInitSource:
+        type: string
+      Count:
+        type: number
+      StaticIP:
+        type: string
+      CloudInitReplace:
+        type: array
+        items:
+          $ref: "#/definitions/CloudInitReplaceItem"
+  CloudInitReplaceItem:
+    type: object
+    properties:
+      Name:
+        type: string
+      ReplaceValue:
+        type: string

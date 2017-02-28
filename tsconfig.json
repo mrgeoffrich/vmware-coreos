@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "es6",
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "outDir": "./build",
+        "allowJs": true,
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },
+    "exclude": [
+        "node_modules",
+        "build",
+        "gulpfile.js",
+        "vmware/package/**/*"
+    ]
+}

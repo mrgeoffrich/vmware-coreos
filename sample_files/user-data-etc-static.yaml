@@ -1,0 +1,32 @@
+#cloud-config
+---
+ssh-authorized-keys:
+  - ssh-rsa PUT YOUR KEY HERE
+users:
+  - name: testuser
+    groups: 
+      - sudo
+      - docker
+    passwd: $1$bBcQ2nv5$6HAiGk7aF5lgM7pyVzuPa
+coreos:
+  etcd2:
+    name: etcdserver
+    initial-cluster: etcdserver=http://$private_ipv4:2380
+    initial-advertise-peer-urls: http://$private_ipv4:2380
+    advertise-client-urls: http://$private_ipv4:2379
+    listen-client-urls: http://0.0.0.0:2379
+    listen-peer-urls: http://0.0.0.0:2380
+  units:
+    - name: etcd2.service
+      command: start
+    - name: flanneld.service
+      command: start
+      drop-ins:
+        - name: 50-network-config.conf
+          content: |
+            [Unit]
+            Requires=etcd2.service
+            [Service]
+            ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{ "Network": "10.2.0.0/16", "Backend":{"Type":"vxlan"} }'
+  update:
+    group: stable
