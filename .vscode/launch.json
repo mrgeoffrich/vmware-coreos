@@ -25,7 +25,7 @@
       "program": "${workspaceRoot}/build/src/index.js",
       "cwd": "${workspaceRoot}",
       "outFiles": ["${workspaceRoot}/build/**/*"],
-      "args": ["env-create","deploy_files/environment_coreos.json","deploy_files/subnet_home.json","deploy_files/vmware_home.json"],
+      "args": ["env-create","deploy_files/environment_coreos.json","deploy_files/subnet_home.json","deploy_files/vmware_mac.json"],
       "sourceMaps": true,
       "console": "integratedTerminal",
       "env": {

@@ -30,7 +30,7 @@ export class VMWare {
         this.TaskManager = taskManager;
     }
 
-    private appendToken(stsService: vspherests.stsService, samlToken: Node, {body, outgoing}) {
+    private appendToken(stsService: vspherests.stsService, samlToken: Node, { body, outgoing }) {
         if (outgoing) {
             let header = body.createElementNS(
                 'http://schemas.xmlsoap.org/soap/envelope/', 'Header');
@@ -53,7 +53,7 @@ export class VMWare {
 
     private async issueToken(stsService: vspherests.stsService, username: string, password: string) {
         let samlToken;
-        let {addHandler, serializeObject, stsPort, wst13, wsse, wsu} = stsService;
+        let { addHandler, serializeObject, stsPort, wst13, wsse, wsu } = stsService;
         let requestSecurityToken = wst13.RequestSecurityTokenType({
             Delegatable: true,
             KeyType: wst13.KeyTypeEnum
@@ -75,7 +75,7 @@ export class VMWare {
             SignatureAlgorithm: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
             TokenType: 'urn:oasis:names:tc:SAML:2.0:assertion'
         });
-        addHandler(({body, outgoing}) => {
+        addHandler(({ body, outgoing }) => {
             if (outgoing) {
                 let securityHeader = wsse.SecurityHeaderType({
                     Timestamp: wsu.TimestampType({
@@ -101,7 +101,7 @@ export class VMWare {
                 body.firstChild.insertBefore(header, body.firstChild.firstChild);
             }
         });
-        addHandler(({body, outgoing}) => {
+        addHandler(({ body, outgoing }) => {
             if (!outgoing) {
                 samlToken = body.getElementsByTagNameNS(
                     'urn:oasis:names:tc:SAML:2.0:assertion', 'Assertion')[0];
@@ -146,8 +146,8 @@ export class VMWare {
     }
 
     public async ContentLibraryExists(libraryName: string): Promise<string> {
-        let {content} = this.cisService;
-        let {library} = content;
+        let { content } = this.cisService;
+        let { library } = content;
         this.TaskManager.StartStep(false, `Check library '${libraryName}' exists`, 'mag_right');
         let findSpec = this.cisService.content.library.FindSpec({ name: libraryName });
         var allLibraries = await library.find(findSpec);
@@ -160,8 +160,8 @@ export class VMWare {
     }
     /** Check to see if a content library exists and if it doesn't, create it. */
     public async ContentLibraryExistsAndCreate(libraryName: string, datastore: vspherevim.vimService.vim.ManagedObjectReference): Promise<string> {
-        let {content, uuid} = this.cisService;
-        let {library, localLibrary} = content;
+        let { content, uuid } = this.cisService;
+        let { library, localLibrary } = content;
         this.TaskManager.StartStep(false, `Check library '${libraryName}' exists`, 'mag_right');
         let findSpec = this.cisService.content.library.FindSpec({ name: libraryName });
         var allLibraries = await library.find(findSpec);
@@ -227,8 +227,8 @@ export class VMWare {
         filepath: string,
         libraryItemName: string,
         itemDescription: string) {
-        let {content, uuid} = this.cisService;
-        let {library} = content;
+        let { content, uuid } = this.cisService;
+        let { library } = content;
         let itemModel = library.ItemModel({
             description: itemDescription,
             id: uuid(),
@@ -310,7 +310,7 @@ export class VMWare {
         datastore?: vspherevim.vimService.vim.ManagedObjectReference,
         host?: vspherevim.vimService.vim.ManagedObjectReference): Promise<vspherevim.vimService.vim.ManagedObjectReference> {
         this.TaskManager.StartStep(false, `Deploy OVA ${templateName} to VM ${vmName}`, 'unicorn_face');
-        let {ovf, uuid} = this.cisService;
+        let { ovf, uuid } = this.cisService;
         let deploymentTarget = ovf.libraryItem.DeploymentTarget({
             resourcePoolId: resourcePool.value,
             hostId: host.value
@@ -343,10 +343,10 @@ export class VMWare {
      * Note: BROKEN - need to manage hosts that dont have resource pools when they are in a cluster
      */
     public async GetDefaultResourcePoolForHost(host: vspherevim.vimService.vim.ManagedObjectReference): Promise<vspherevim.vimService.vim.ManagedObjectReference> {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector,
             viewManager
-        }, vim, vimPort} = this.vimService;
+        }, vim, vimPort } = this.vimService;
         let containerView = await this.vimService.vimPort.createContainerView(viewManager, host, ['ManagedEntity'], true);
         let targetObjects = await vimPort.retrievePropertiesEx(propertyCollector, [
             vim.PropertyFilterSpec({
@@ -397,11 +397,11 @@ export class VMWare {
      * @return {vspherevim.vimService.vim.ManagedObjectReference} A managed object reference.
      */
     public async GetManagedObject(name: string, type: string, ignoreMissing: boolean = false): Promise<vspherevim.vimService.vim.ManagedObjectReference> {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector,
             rootFolder,
             viewManager
-        }, vim, vimPort} = this.vimService;
+        }, vim, vimPort } = this.vimService;
         let containerView = await this.vimService.vimPort.createContainerView(viewManager, rootFolder, [type], true);
         let targetObjects = await vimPort.retrievePropertiesEx(propertyCollector, [
             vim.PropertyFilterSpec({
@@ -419,6 +419,10 @@ export class VMWare {
                 })]
             })
         ], vim.RetrieveOptions());
+        if (targetObjects === undefined) {
+            if (ignoreMissing) { return null; }
+            throw Error(`Unable to find object of type ${type} and name ${name} `);
+        }
         let matchSet = targetObjects.objects.filter(p => p.propSet[0].val === name);
         if (matchSet.length === 0) {
             if (ignoreMissing) { return null; }
@@ -432,9 +436,9 @@ export class VMWare {
 
     /** Use this function to explore all the properties of a Managed Object. Mainly useful for diagnostics. */
     public async GetEverything(objectToInspect: vspherevim.vimService.vim.ManagedObjectReference): Promise<any> {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector
-        }, vim, vimPort} = this.vimService;
+        }, vim, vimPort } = this.vimService;
         let targetObjects = await vimPort.retrievePropertiesEx(propertyCollector, [
             vim.PropertyFilterSpec({
                 objectSet: [vim.ObjectSpec({
@@ -457,9 +461,9 @@ export class VMWare {
 
     /** Get a single property of a managed object when the property is expected to be a simple value. */
     public async GetProperty(objectToInspect: vspherevim.vimService.vim.ManagedObjectReference, property: string): Promise<string> {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector
-        }, vim, vimPort} = this.vimService;
+        }, vim, vimPort } = this.vimService;
         let targetObjects = await vimPort.retrievePropertiesEx(propertyCollector, [
             vim.PropertyFilterSpec({
                 objectSet: [vim.ObjectSpec({
@@ -481,9 +485,9 @@ export class VMWare {
 
     /** Get a single property of a managed object when the property is expected to be a complex object. */
     public async GetPropertyAny(objectToInspect: vspherevim.vimService.vim.ManagedObjectReference, property: string): Promise<any> {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector
-        }, vim, vimPort} = this.vimService;
+        }, vim, vimPort } = this.vimService;
         let targetObjects = await vimPort.retrievePropertiesEx(propertyCollector, [
             vim.PropertyFilterSpec({
                 objectSet: [vim.ObjectSpec({
@@ -611,9 +615,9 @@ export class VMWare {
     }
 
     private async completeTask(vimService: vspherevim.vimService, task: vspherevim.vimService.vim.ManagedObjectReference) {
-        let {serviceContent: {
+        let { serviceContent: {
             propertyCollector
-        }, vim, vimPort} = vimService;
+        }, vim, vimPort } = vimService;
         let filter = await vimPort.createFilter(propertyCollector,
             vim.PropertyFilterSpec({
                 objectSet: [vim.ObjectSpec({
@@ -632,10 +636,10 @@ export class VMWare {
                 version, vim.WaitOptions());
             version = updateSet.version;
             updateSet.filterSet.
-                filter(({filter: {value}}) => value === filter.value).
-                reduce((previous, {objectSet}) => [...previous, ...objectSet], []).
-                reduce((previous, {changeSet}) => [...previous, ...changeSet], []).
-                forEach(({name, val}) => {
+                filter(({ filter: { value } }) => value === filter.value).
+                reduce((previous, { objectSet }) => [...previous, ...objectSet], []).
+                reduce((previous, { changeSet }) => [...previous, ...changeSet], []).
+                forEach(({ name, val }) => {
                     if (name === 'info.error' && val !== undefined) {
                         throw Error(val.localizedMessage);
                     }
