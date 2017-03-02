@@ -601,6 +601,16 @@ export class VMWare {
         this.TaskManager.FinishStep();
     }
 
+    /** Restart a vitual machine. */
+    public async RestartVM(vmName: string) {
+        this.TaskManager.StartStep(false, `Guest reboot VM ${vmName}`, 'bulb');
+        let virtualMachine = await this.GetManagedObject(vmName, 'VirtualMachine', true);
+        if (virtualMachine === null) {
+            throw Error('VM not found.');
+        }
+        await this.vimService.vimPort.rebootGuest(virtualMachine);
+        this.TaskManager.FinishStep();
+    }
 
     /** Destory a virtual machine. */
     public async DestroyVM(vmName: string) {

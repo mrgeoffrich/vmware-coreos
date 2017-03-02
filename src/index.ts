@@ -83,21 +83,28 @@ commander.command('env-destroy <environmentfile>')
         await new EnvironmentTaskManager().DestroyEnvironment(environmentDefinition);
     });
 
-commander.command('env-reconfigure <environmentfile>')
+commander.command('env-reconfigure <environmentfile> <subnetfile>')
     .description('Re-apply configuration on VMs and restart them all.')
-    .action(async (environmentfile) => {
+    .action(async (environmentfile, subnetfile) => {
         let envFileContents = JSON.parse(fs.readFileSync(path.resolve(environmentfile), 'utf8'));
         let environmentDefinition: EnvironmentDefinition = {
             Name: envFileContents.Name,
             Description: envFileContents.Description,
             Machines: envFileContents.Machines
         };
-        //TODO: Implement
+        let subnetFileContents = JSON.parse(fs.readFileSync(path.resolve(subnetfile), 'utf8'));
+        let subnetConfiguration: SubnetDefinition = {
+            GatewayIP: subnetFileContents.GatewayIP,
+            DNSServers: subnetFileContents.DNSServers,
+            SubnetIP: subnetFileContents.SubnetIP,
+            SubnetMask: subnetFileContents.SubnetMask
+        };
+        await new EnvironmentTaskManager().ReconfigureEnironment(environmentDefinition, subnetConfiguration);
     });
 
-commander.command('env-validate <environmentdefinition> <subnetfile> <validationspec>')
+commander.command('env-validate <environmentdefinition> <subnetfile> <validationspec> <username> <password>')
     .description('Validate that an environment is running correctly.')
-    .action(async (environmentfile, subnetfile, validationspec) => {
+    .action(async (environmentfile, subnetfile, validationspec, username, password) => {
         let envFileContents = JSON.parse(fs.readFileSync(path.resolve(environmentfile), 'utf8'));
         let subnetFileContents = JSON.parse(fs.readFileSync(path.resolve(subnetfile), 'utf8'));
         let subnetConfiguration: SubnetDefinition = {
@@ -111,7 +118,7 @@ commander.command('env-validate <environmentdefinition> <subnetfile> <validation
             Description: envFileContents.Description,
             Machines: envFileContents.Machines
         };
-        await new EnvironmentTaskManager().ValidateEnvironment(environmentDefinition, subnetConfiguration);
+        await new EnvironmentTaskManager().ValidateEnvironment(environmentDefinition, subnetConfiguration, username, password);
     });
 
 commander.command('serve')
