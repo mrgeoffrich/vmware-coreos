@@ -20,6 +20,13 @@
             "Type":"no-error",
             "Value":"",
             "Description":"Fleetd is connected"
+        },
+        {
+            "Roles":["worker"],
+            "Command":"sudo systemctl is-active flanneld",
+            "Type":"expected-output",
+            "Value":"active",
+            "Description":"Flanneld is running"
         }
     ]
 }
