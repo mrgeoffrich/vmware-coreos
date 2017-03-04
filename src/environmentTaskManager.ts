@@ -5,6 +5,7 @@ import { TaskManager, TaskManagerOutputType, ITaskManager } from './taskManager'
 import { SubnetDefinition } from './subnetDefinition';
 import { VmwareHostDefinition } from './vmwareHostDefinition';
 import { EnvironmentDefinition } from './environmentDefinition';
+import { ValidationSpecDefinition } from './validationSpecDefinition';
 import { validate } from './validationPromise';
 import * as leftPad from 'left-pad';
 export class EnvironmentTaskManager {
@@ -17,12 +18,12 @@ export class EnvironmentTaskManager {
         environmentDefinition: EnvironmentDefinition,
         coreOsStream: string = 'stable',
         coreOsContentLibraryName: string = 'coreos') {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, `Create ${environmentDefinition.Name}`);
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, `Create ${environmentDefinition.Name}`);
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
-            let coreos = new CoreOsHelper(vcenter, taskManger);
+            let coreos = new CoreOsHelper(vcenter, taskManager);
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             await coreos.GetCoreOsContentLibrary(coreOsContentLibraryName);
             for (let role of environmentDefinition.Machines) {
@@ -43,19 +44,19 @@ export class EnvironmentTaskManager {
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }
 
     public async DestroyEnvironment(environmentDefinition: EnvironmentDefinition) {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Destroy environment');
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Destroy environment');
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             for (let role of environmentDefinition.Machines) {
@@ -66,19 +67,19 @@ export class EnvironmentTaskManager {
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }
 
     public async TurnOnEnvironment(environmentDefinition: EnvironmentDefinition) {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Turn on environment');
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Turn on environment');
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             for (let role of environmentDefinition.Machines) {
@@ -88,19 +89,19 @@ export class EnvironmentTaskManager {
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }
 
     public async TurnOffEnvironment(environmentDefinition: EnvironmentDefinition) {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Turn off environment');
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Turn off environment');
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             for (let role of environmentDefinition.Machines) {
@@ -110,19 +111,23 @@ export class EnvironmentTaskManager {
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }
 
-    public async ValidateEnvironment(environmentDefinition: EnvironmentDefinition, subnetConfiguration: SubnetDefinition, username: string, password: string) {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Validate environment');
+    public async ValidateEnvironment(environmentDefinition: EnvironmentDefinition,
+        subnetConfiguration: SubnetDefinition,
+        validationDefintion: ValidationSpecDefinition,
+        username: string,
+        password: string) {
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, 'Validate environment');
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             for (let role of environmentDefinition.Machines) {
@@ -130,46 +135,48 @@ export class EnvironmentTaskManager {
                     let vmName = this.CreateServerName(environmentDefinition.Name, role.Name, i);
                     // Get the IP address of this VM
                     let ipAddresses = await vcenter.GetSubnetIpOfVM(vmName, subnetConfiguration.SubnetIP, subnetConfiguration.SubnetMask);
+                    taskManager.StartStep(false, 'Validate IP of ' + vmName, '');
                     if (ipAddresses.length > 1) {
-                        console.log('Server has multiple IP addresses that match that subnet');
+                        taskManager.FinishStepFail('Server has multiple IP addresses.');
                     }
                     if (ipAddresses.length === 1) {
-                        if (role.Name === 'etcd') {
-                            let clusterHealth = await validate(ipAddresses[0], username, password, 'etcdctl cluster-health');
-                            if (clusterHealth.Output.indexOf('cluster is health') >= 0) {
-                                console.log('etcd ok ' + ipAddresses[0]);
-                            } else {
-                                console.log('error');
-                            }
-                        }
-                        if (role.Name === 'worker') {
-                            let clusterHealth = await validate(ipAddresses[0], username, password, 'sudo systemctl is-active docker');
-                            if (clusterHealth.Output.indexOf('active') >= 0) {
-                                console.log('docker ok ' + ipAddresses[0]);
-                            } else {
-                                console.log('error');
+                        taskManager.FinishStep();
+                        // Iterate through validation steps
+                        for (let validationStep of validationDefintion.ValidationCommands) {
+                            if (validationStep.Roles.indexOf(role.Name) >= 0) {
+                                taskManager.StartStep(false, validationStep.Description, 'ballot_box_with_check');
+                                let validationResult = await validate(ipAddresses[0], username, password, validationStep.Command);
+                                if (validationStep.Type === 'expected-output') {
+                                    if (validationResult.Output.indexOf(validationStep.Value) >= 0) {
+                                        taskManager.FinishStep();
+                                    } else {
+                                        taskManager.FinishStepFail();
+                                    }
+                                } else {
+                                    taskManager.FinishStepFail('Unknown validation type');
+                                }
                             }
                         }
                     }
                     if (ipAddresses.length === 0) {
-                        console.log('No matching IP addresses');
+                        taskManager.FinishStepFail('Server has no IP addresses.');
                     }
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }
 
-    public async ReconfigureEnironment(environmentDefinition: EnvironmentDefinition, subnetConfiguration: SubnetDefinition) {
-        let taskManger: ITaskManager = new TaskManager(TaskManagerOutputType.Console, `Create ${environmentDefinition.Name}`);
+    public async ReconfigureEnvironment(environmentDefinition: EnvironmentDefinition, subnetConfiguration: SubnetDefinition) {
+        let taskManager: ITaskManager = new TaskManager(TaskManagerOutputType.Console, `Create ${environmentDefinition.Name}`);
         try {
-            taskManger.StartAll();
-            let vcenter = new VMWare(taskManger);
+            taskManager.StartAll();
+            let vcenter = new VMWare(taskManager);
             let creds: Credentials = new Credentials('.credentials.json');
             await vcenter.Connect(creds.Host, creds.Username, creds.Password);
             for (let role of environmentDefinition.Machines) {
@@ -189,10 +196,10 @@ export class EnvironmentTaskManager {
                 }
             }
             await vcenter.Disconnect();
-            taskManger.FinishAll();
+            taskManager.FinishAll();
             process.exit(0);
         } catch (ex) {
-            taskManger.Error(ex);
+            taskManager.Error(ex);
             process.exit(1);
         }
     }

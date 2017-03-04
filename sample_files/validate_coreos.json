@@ -1,0 +1,18 @@
+{
+    "ValidationCommands": [
+        {
+            "Roles":["etcd", "worker"],
+            "Command":"etcdctl cluster-health",
+            "Type":"expected-output",
+            "Value":"cluster is healthy",
+            "Description":"Etcd is healthy"
+        },
+        {
+            "Roles":["worker"],
+            "Command":"sudo systemctl is-active docker",
+            "Type":"expected-output",
+            "Value":"active",
+            "Description":"Docker is running"
+        }
+    ]
+}

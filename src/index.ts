@@ -4,6 +4,7 @@ import { CoreOsLibraryTaskManager } from './coreOsLibraryTaskManager';
 import { SubnetDefinition } from './subnetDefinition';
 import { VmwareHostDefinition } from './vmwareHostDefinition';
 import { EnvironmentDefinition } from './environmentDefinition';
+import { ValidationSpecDefinition } from './validationSpecDefinition';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -99,7 +100,7 @@ commander.command('env-reconfigure <environmentfile> <subnetfile>')
             SubnetIP: subnetFileContents.SubnetIP,
             SubnetMask: subnetFileContents.SubnetMask
         };
-        await new EnvironmentTaskManager().ReconfigureEnironment(environmentDefinition, subnetConfiguration);
+        await new EnvironmentTaskManager().ReconfigureEnvironment(environmentDefinition, subnetConfiguration);
     });
 
 commander.command('env-validate <environmentdefinition> <subnetfile> <validationspec> <username> <password>')
@@ -107,6 +108,10 @@ commander.command('env-validate <environmentdefinition> <subnetfile> <validation
     .action(async (environmentfile, subnetfile, validationspec, username, password) => {
         let envFileContents = JSON.parse(fs.readFileSync(path.resolve(environmentfile), 'utf8'));
         let subnetFileContents = JSON.parse(fs.readFileSync(path.resolve(subnetfile), 'utf8'));
+        let validationContents = JSON.parse(fs.readFileSync(path.resolve(validationspec), 'utf8'));
+        let validationDefinition: ValidationSpecDefinition = {
+            ValidationCommands: validationContents.ValidationCommands
+        };
         let subnetConfiguration: SubnetDefinition = {
             GatewayIP: subnetFileContents.GatewayIP,
             DNSServers: subnetFileContents.DNSServers,
@@ -118,7 +123,7 @@ commander.command('env-validate <environmentdefinition> <subnetfile> <validation
             Description: envFileContents.Description,
             Machines: envFileContents.Machines
         };
-        await new EnvironmentTaskManager().ValidateEnvironment(environmentDefinition, subnetConfiguration, username, password);
+        await new EnvironmentTaskManager().ValidateEnvironment(environmentDefinition, subnetConfiguration, validationDefinition, username, password);
     });
 
 commander.command('serve')
