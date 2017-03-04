@@ -133,33 +133,45 @@ export class EnvironmentTaskManager {
             for (let role of environmentDefinition.Machines) {
                 for (var i = 0; i < role.Count; i++) {
                     let vmName = this.CreateServerName(environmentDefinition.Name, role.Name, i);
-                    // Get the IP address of this VM
-                    let ipAddresses = await vcenter.GetSubnetIpOfVM(vmName, subnetConfiguration.SubnetIP, subnetConfiguration.SubnetMask);
-                    taskManager.StartStep(false, 'Validate IP of ' + vmName, '');
-                    if (ipAddresses.length > 1) {
-                        taskManager.FinishStepFail('Server has multiple IP addresses.');
-                    }
-                    if (ipAddresses.length === 1) {
-                        taskManager.FinishStep();
-                        // Iterate through validation steps
-                        for (let validationStep of validationDefintion.ValidationCommands) {
-                            if (validationStep.Roles.indexOf(role.Name) >= 0) {
-                                taskManager.StartStep(false, validationStep.Description, 'ballot_box_with_check');
-                                let validationResult = await validate(ipAddresses[0], username, password, validationStep.Command);
-                                if (validationStep.Type === 'expected-output') {
-                                    if (validationResult.Output.indexOf(validationStep.Value) >= 0) {
-                                        taskManager.FinishStep();
+                    taskManager.StartStep(false, 'Validate running server ' + vmName, 'ballot_box_with_check');
+                    // Check VM Status first
+                    let vmRunning = await vcenter.IsVMRunning(vmName);
+                    if (!vmRunning) {
+                        taskManager.FinishStepFail('VM not running');
+                    } else {
+                        // Get the IP addresses of this VM and ensure there is a sensible one to use
+                        let ipAddresses = await vcenter.GetSubnetIpOfVM(vmName, subnetConfiguration.SubnetIP, subnetConfiguration.SubnetMask);
+                        if (ipAddresses.length > 1) {
+                            taskManager.FinishStepFail('Server has multiple IP addresses.');
+                        }
+                        if (ipAddresses.length === 1) {
+                            taskManager.FinishStep();
+                            // Iterate through validation steps
+                            for (let validationStep of validationDefintion.ValidationCommands) {
+                                if (validationStep.Roles.indexOf(role.Name) >= 0) {
+                                    taskManager.StartStep(false, validationStep.Description, 'ballot_box_with_check');
+                                    let validationResult = await validate(ipAddresses[0], username, password, validationStep.Command);
+                                    if (validationStep.Type === 'expected-output') {
+                                        if (validationResult.Output.indexOf(validationStep.Value) >= 0) {
+                                            taskManager.FinishStep();
+                                        } else {
+                                            taskManager.FinishStepFail();
+                                        }
+                                    } else if (validationStep.Type === 'no-error') {
+                                        if (validationResult.ErrorOutput === '') {
+                                            taskManager.FinishStep();
+                                        } else {
+                                            taskManager.FinishStepFail();
+                                        }
                                     } else {
-                                        taskManager.FinishStepFail();
+                                        taskManager.FinishStepFail('Unknown validation type');
                                     }
-                                } else {
-                                    taskManager.FinishStepFail('Unknown validation type');
                                 }
                             }
                         }
-                    }
-                    if (ipAddresses.length === 0) {
-                        taskManager.FinishStepFail('Server has no IP addresses.');
+                        if (ipAddresses.length === 0) {
+                            taskManager.FinishStepFail('Server has no IP matching provided subnet.');
+                        }
                     }
                 }
             }

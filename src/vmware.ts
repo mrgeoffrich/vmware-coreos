@@ -565,6 +565,16 @@ export class VMWare {
         });
     }
 
+    /** Returns the current running or not running state of the VM */
+    public async IsVMRunning(vmName: string): Promise<boolean> {
+        let virtualMachine = await this.GetManagedObject(vmName, 'VirtualMachine', true);
+        if (virtualMachine === null) {
+            throw Error('VM not found.');
+        }
+        let guestInformation = await this.GetPropertyAny(virtualMachine, 'guest');
+        return (guestInformation.guestState === 'running');
+    }
+
     /** Turn on a virtual machine. */
     public async TurnOnVM(vmName: string) {
         this.TaskManager.StartStep(false, `Turn on VM ${vmName}`, 'bulb');
