@@ -6,6 +6,6 @@ describe('Hello function', () => {
   it('should return hello world', () => {
     let taskManager: ITaskManager;
     taskManager = new TaskManager(TaskManagerOutputType.Console, 'test tasks');
-    expect(taskManager.Id).to.equal('Hello World!');
+    expect(taskManager.Steps.length).to.equal(0);
   });
 });
