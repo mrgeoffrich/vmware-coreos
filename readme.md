@@ -81,11 +81,23 @@ Turns on the machines specified in the environmentfile.
 
 ### **env-validate**
 
-Still WIP. This will run commands to validate that an environment is in the correct expected state.
+```
+node ./build/src/index.js env-validate environmentdefinition subnetfile validationspec username password
+```
+
+Using the supplied username and password, env-validate will SSH on to all the machines in an environment and run commands. The validationspec file (a sample file is in the sample_files folder) defines what command to run and what output to expect.
+
+This can be used to ensure that everything is running properly after an environment is provisioned.
 
 ### **env-reconfigure**
 
-Still WIP. This will change the coreos settings on already provisioned machines.
+```
+node ./build/src/index.js env-reconfigure environmentfile subnetfile
+```
+
+This command will, using the environmentfile specification reconfigure all the guestinfo settings for all the machines in an environment. After these settings are set, all the machines will get gracefully guest rebooted to apply the settings.
+
+This is useful to apply changes to the cloud init files for an environment without having to destroy and re-create all the machines.
 
 ### **coreos-setup**
 
@@ -115,6 +127,10 @@ This file defines networking configuration for servers, in terms of the subnet, 
 ### VMWare host file
 
 This file defines the host, datastore and resource pool to use when provisioning new machines.
+
+### Validation Spec file
+
+This file allows you to run commands on a set of server roles. You can define the command to run and also the output to expect.
 
 ### cloudinit files
 
