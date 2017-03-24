@@ -1,4 +1,5 @@
 import * as commander from 'commander';
+import { VmwareTaskManager } from './vmwareTaskManager';
 import { EnvironmentTaskManager } from './environmentTaskManager';
 import { CoreOsLibraryTaskManager } from './coreOsLibraryTaskManager';
 import { SubnetDefinition } from './subnetDefinition';
@@ -124,6 +125,12 @@ commander.command('env-validate <environmentdefinition> <subnetfile> <validation
             Machines: envFileContents.Machines
         };
         await new EnvironmentTaskManager().ValidateEnvironment(environmentDefinition, subnetConfiguration, validationDefinition, username, password);
+    });
+
+commander.command('check-credentials')
+    .description('Attempt to connect to vcenter with the supplied credentials.')
+    .action(async () => {
+        await new VmwareTaskManager().ValidateCredentials();
     });
 
 commander.command('serve')

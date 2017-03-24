@@ -103,7 +103,7 @@ export class TaskManager implements ITaskManager {
 
     public StartAll() {
         if (this.outputType === TaskManagerOutputType.Console) {
-            this.StartStep(false, 'Begin ' + this.taskListDescription, 'sunny');
+            this.StartStep(false, this.taskListDescription, 'sunny');
         } else if (this.outputType === TaskManagerOutputType.HttpCallback) {
             // Do a http get/post/whatevs
         }

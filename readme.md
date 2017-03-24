@@ -109,6 +109,13 @@ This command automates the setup of the coreos OVA file for use with env-create.
 
 This needs to be run before env-create will work.
 
+### check-credentials
+
+```
+node ./build/src/index.js coreos-setup check-credentials
+```
+
+Attempt to log in to the VCenter server using the configured credentials.
 
 ### **serve**
 
