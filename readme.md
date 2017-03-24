@@ -16,21 +16,19 @@ npm install -g tslint mocha yarn gulp-cli
 
 To start development on this project run these commands:
 ```
-yarn
-gulp prepare
+yarn; gulp prepare
 ```
 
 ## Build
 
 ```
-yarn
-gulp
+yarn; gulp
 ```
 
 ## Test
 
 ```
-npm test
+yarn; gulp; npm test
 ```
 
 
@@ -112,7 +110,7 @@ This needs to be run before env-create will work.
 ### check-credentials
 
 ```
-node ./build/src/index.js coreos-setup check-credentials
+node ./build/src/index.js check-credentials
 ```
 
 Attempt to log in to the VCenter server using the configured credentials.
